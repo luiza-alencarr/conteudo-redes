@@ -108,7 +108,11 @@ Avisos não fatais (ex.: insights indisponíveis para um post específico) apare
 
 ### Visualizando os dados
 
-A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance, taxa de engajamento) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original), ordenada por engajamento (curtidas + comentários) do maior pro menor. Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual. A taxa de engajamento é `(curtidas + comentários) / seguidores × 100`; se `followers_count` ainda não tiver sido sincronizado, o card mostra um aviso pra sincronizar de novo em vez de um número errado.
+A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance, taxa de engajamento) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original). Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual.
+
+**Ordenação da tabela**: posts dos últimos 30 dias vêm primeiro, ordenados por engajamento (curtidas + comentários + compartilhamentos + salvamentos) do maior pro menor; posts mais antigos que isso vêm depois, ordenados por data de publicação — um post de meses atrás não "compete" por ter tido mais tempo pra acumular interações.
+
+**Taxa de engajamento**: é a média, entre todos os posts, de `(curtidas + comentários + compartilhamentos + salvamentos) / seguidores × 100` calculado post a post — não a soma de todas as interações do perfil dividida pelos seguidores uma única vez (isso infla o número conforme mais posts são sincronizados). Se `followers_count` ainda não tiver sido sincronizado, o card mostra um aviso pra sincronizar de novo em vez de um número errado.
 
 ## Estrutura do banco
 
