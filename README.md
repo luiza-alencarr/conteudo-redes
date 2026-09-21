@@ -116,6 +116,14 @@ O card "Posts (60 dias)" conta quantos posts foram **publicados** nos últimos 6
 
 **Taxa de engajamento**: é a média, entre todos os posts, de `(curtidas + comentários + compartilhamentos + salvamentos) / seguidores × 100` calculado post a post — não a soma de todas as interações do perfil dividida pelos seguidores uma única vez (isso infla o número conforme mais posts são sincronizados). Se `followers_count` ainda não tiver sido sincronizado, o card mostra um aviso pra sincronizar de novo em vez de um número errado.
 
+**Detalhes por post**: clicando em qualquer linha da tabela, ela expande e mostra:
+
+- **Gancho** — a primeira frase ou primeira linha da legenda (até a primeira quebra de linha ou ponto final, o que vier primeiro). É uma heurística de texto simples, sem IA — não tenta "entender" a legenda, só corta ela.
+- **Legenda completa** e **duração** (formato `m:ss`, quando a rede de origem expõe esse dado).
+- **Roteiro / Notas** — campo de texto livre, editável ali mesmo, salvo no banco (`posts.notes`) via Server Action. É o único campo dessa tela que não vem de nenhuma API — é seu, pra documentar o roteiro real do vídeo ou por que ele funcionou.
+
+**Duração**: buscada na sincronização (`duration` da Instagram Graph API e da TikTok API). Como não é possível confirmar sem testar contra as APIs reais se o campo `duration` está disponível pra mídia comum do Instagram, a sincronização tenta com esse campo e, se a API rejeitar, tenta de novo sem ele automaticamente (sem quebrar o resto do sync) — nesse caso a coluna "Duração" fica vazia (`—`) até isso ser resolvido.
+
 ## Integração com TikTok
 
 Usa o login OAuth 2.0 do TikTok for Developers (com PKCE) pra conectar a própria conta e importar vídeos e métricas básicas (views, curtidas, comentários, compartilhamentos).
@@ -164,7 +172,7 @@ O PDF é gerado com [`@react-pdf/renderer`](https://react-pdf.org/) direto no se
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
-- `posts` — conteúdos publicados (rede, id externo, tipo, legenda/roteiro, data, link)
+- `posts` — conteúdos publicados (rede, id externo, tipo, legenda, data, link, duração, notas)
 - `post_metrics` — métricas coletadas por post ao longo do tempo (curtidas, comentários, views, salvamentos, alcance)
 - `comments` — comentários dos posts (com `like_count`, usado pra ordenar por relevância no relatório em PDF)
 - `audience_demographics` — dados demográficos da audiência por rede/data

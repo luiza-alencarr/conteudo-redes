@@ -84,6 +84,8 @@ export async function syncInstagram(): Promise<SyncSummary> {
           published_at: media.timestamp,
           url: media.permalink ?? null,
           thumbnail_url: pickThumbnailUrl(media),
+          duration_seconds:
+            typeof media.duration === "number" ? Math.round(media.duration) : null,
         },
         { onConflict: "network,external_id" },
       )

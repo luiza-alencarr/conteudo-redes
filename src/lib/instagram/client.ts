@@ -96,6 +96,9 @@ export interface InstagramMedia {
   comments_count?: number;
   media_url?: string;
   thumbnail_url?: string;
+  // Nem toda versão/tipo de mídia da Graph API expõe esse campo — ver o
+  // fallback em getAllMedia.
+  duration?: number;
 }
 
 interface GraphPage<T> {
@@ -103,29 +106,52 @@ interface GraphPage<T> {
   paging?: { cursors?: { after?: string }; next?: string };
 }
 
+const MEDIA_FIELDS =
+  "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,media_url,thumbnail_url";
+const MEDIA_FIELDS_WITH_DURATION = `${MEDIA_FIELDS},duration`;
+
 export async function getAllMedia(
   igUserId: string,
   accessToken: string,
   maxItems = 50,
 ): Promise<InstagramMedia[]> {
-  const fields =
-    "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,media_url,thumbnail_url";
+  let fields = MEDIA_FIELDS_WITH_DURATION;
   const items: InstagramMedia[] = [];
   let after: string | undefined;
+  let fellBackToBaseFields = false;
 
   do {
     const params: Record<string, string> = { fields, limit: "25" };
     if (after) params.after = after;
 
-    const page = await graphGet<GraphPage<InstagramMedia>>(
-      `/${igUserId}/media`,
-      params,
-      accessToken,
-    );
+    let page: GraphPage<InstagramMedia>;
+    try {
+      page = await graphGet<GraphPage<InstagramMedia>>(`/${igUserId}/media`, params, accessToken);
+    } catch (error) {
+      // "duration" pode não ser um field válido pra mídia comum nessa versão
+      // da API — tenta de novo sem ele em vez de derrubar a sincronização
+      // inteira. Só tenta esse fallback uma vez.
+      if (fields === MEDIA_FIELDS_WITH_DURATION) {
+        console.warn(
+          "Falha ao buscar mídia com o field 'duration', tentando sem ele:",
+          error instanceof Error ? error.message : error,
+        );
+        fields = MEDIA_FIELDS;
+        fellBackToBaseFields = true;
+        params.fields = fields;
+        page = await graphGet<GraphPage<InstagramMedia>>(`/${igUserId}/media`, params, accessToken);
+      } else {
+        throw error;
+      }
+    }
 
     items.push(...page.data);
     after = page.paging?.next ? page.paging.cursors?.after : undefined;
   } while (after && items.length < maxItems);
+
+  if (fellBackToBaseFields) {
+    console.warn("Sincronização do Instagram seguiu sem dados de duração dos posts.");
+  }
 
   return items.slice(0, maxItems);
 }

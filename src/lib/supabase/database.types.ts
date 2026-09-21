@@ -66,6 +66,8 @@ export interface Database {
           published_at: string | null;
           url: string | null;
           thumbnail_url: string | null;
+          duration_seconds: number | null;
+          notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -80,6 +82,8 @@ export interface Database {
           published_at?: string | null;
           url?: string | null;
           thumbnail_url?: string | null;
+          duration_seconds?: number | null;
+          notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -52,6 +52,8 @@ export async function syncTikTok(): Promise<TikTokSyncSummary> {
           published_at: new Date(video.create_time * 1000).toISOString(),
           url: video.share_url ?? null,
           thumbnail_url: video.cover_image_url ?? null,
+          duration_seconds:
+            typeof video.duration === "number" ? Math.round(video.duration) : null,
         },
         { onConflict: "network,external_id" },
       )

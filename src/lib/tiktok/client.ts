@@ -66,31 +66,63 @@ export interface TikTokVideo {
   comment_count?: number;
   share_count?: number;
   view_count?: number;
+  // Nem toda conta/escopo garante esse field — ver o fallback em getVideoList.
+  duration?: number;
 }
 
 interface VideoListPage {
   data: { videos: TikTokVideo[]; cursor: number; has_more: boolean };
 }
 
+const VIDEO_FIELDS =
+  "id,create_time,cover_image_url,share_url,video_description,like_count,comment_count,share_count,view_count";
+const VIDEO_FIELDS_WITH_DURATION = `${VIDEO_FIELDS},duration`;
+
 export async function getVideoList(
   accessToken: string,
   maxItems = 50,
 ): Promise<TikTokVideo[]> {
-  const fields =
-    "id,create_time,cover_image_url,share_url,video_description,like_count,comment_count,share_count,view_count";
+  let fields = VIDEO_FIELDS_WITH_DURATION;
   const videos: TikTokVideo[] = [];
   let cursor: number | undefined;
   let hasMore = true;
+  let fellBackToBaseFields = false;
 
   while (hasMore && videos.length < maxItems) {
-    const result = await apiFetch<VideoListPage>(`/video/list/?fields=${fields}`, accessToken, {
-      method: "POST",
-      body: JSON.stringify({ max_count: 20, ...(cursor ? { cursor } : {}) }),
-    });
+    const body = JSON.stringify({ max_count: 20, ...(cursor ? { cursor } : {}) });
+
+    let result: VideoListPage;
+    try {
+      result = await apiFetch<VideoListPage>(`/video/list/?fields=${fields}`, accessToken, {
+        method: "POST",
+        body,
+      });
+    } catch (error) {
+      // "duration" pode não ser um field aceito nessa conta/escopo — tenta de
+      // novo sem ele em vez de derrubar a sincronização inteira.
+      if (fields === VIDEO_FIELDS_WITH_DURATION) {
+        console.warn(
+          "Falha ao buscar vídeos com o field 'duration', tentando sem ele:",
+          error instanceof Error ? error.message : error,
+        );
+        fields = VIDEO_FIELDS;
+        fellBackToBaseFields = true;
+        result = await apiFetch<VideoListPage>(`/video/list/?fields=${fields}`, accessToken, {
+          method: "POST",
+          body,
+        });
+      } else {
+        throw error;
+      }
+    }
 
     videos.push(...result.data.videos);
     hasMore = result.data.has_more;
     cursor = result.data.cursor;
+  }
+
+  if (fellBackToBaseFields) {
+    console.warn("Sincronização do TikTok seguiu sem dados de duração dos vídeos.");
   }
 
   return videos.slice(0, maxItems);
