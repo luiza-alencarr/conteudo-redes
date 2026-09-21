@@ -1,7 +1,12 @@
 import { BarChart3 } from "lucide-react";
 import { SyncInstagramButton } from "@/components/dashboard/analytics/sync-instagram-button";
+import { StatTile } from "@/components/dashboard/analytics/stat-tile";
+import { PostsTable } from "@/components/dashboard/analytics/posts-table";
+import { getAnalyticsData } from "./queries";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const { posts, totals } = await getAnalyticsData();
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-4">
@@ -15,17 +20,16 @@ export default function AnalyticsPage() {
         <SyncInstagramButton />
       </div>
 
-      <div className="mt-8 flex flex-1 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white p-12">
-        <div className="max-w-md text-center">
-          <p className="text-sm text-neutral-500">
-            Métricas consolidadas de posts (curtidas, comentários, views, alcance) por rede e
-            período.
-          </p>
-          <p className="mt-2 text-xs text-neutral-400">
-            Gráficos chegam em uma próxima etapa — por enquanto, use o botão acima para popular o
-            banco com os dados do Instagram.
-          </p>
-        </div>
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <StatTile label="Posts" value={totals.postsCount} />
+        <StatTile label="Curtidas" value={totals.likes} />
+        <StatTile label="Comentários" value={totals.comments} />
+        <StatTile label="Views" value={totals.views} />
+        <StatTile label="Alcance" value={totals.reach} />
+      </div>
+
+      <div className="mt-6 flex flex-1 flex-col">
+        <PostsTable posts={posts} />
       </div>
     </div>
   );

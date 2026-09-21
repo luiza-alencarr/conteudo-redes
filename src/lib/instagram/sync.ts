@@ -12,6 +12,14 @@ function mapContentType(media: instagram.InstagramMedia): ContentType {
   return "image";
 }
 
+// media_url de um VIDEO é o arquivo de vídeo em si (não renderizável em <img>);
+// nesse caso só thumbnail_url serve como miniatura.
+function pickThumbnailUrl(media: instagram.InstagramMedia): string | null {
+  if (media.thumbnail_url) return media.thumbnail_url;
+  if (media.media_type !== "VIDEO" && media.media_url) return media.media_url;
+  return null;
+}
+
 export interface SyncSummary {
   postsSynced: number;
   metricsSynced: number;
@@ -74,6 +82,7 @@ export async function syncInstagram(): Promise<SyncSummary> {
           caption: media.caption ?? null,
           published_at: media.timestamp,
           url: media.permalink ?? null,
+          thumbnail_url: pickThumbnailUrl(media),
         },
         { onConflict: "network,external_id" },
       )

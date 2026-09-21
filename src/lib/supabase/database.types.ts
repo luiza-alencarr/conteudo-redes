@@ -63,6 +63,7 @@ export interface Database {
           script_id: string | null;
           published_at: string | null;
           url: string | null;
+          thumbnail_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -76,6 +77,7 @@ export interface Database {
           script_id?: string | null;
           published_at?: string | null;
           url?: string | null;
+          thumbnail_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

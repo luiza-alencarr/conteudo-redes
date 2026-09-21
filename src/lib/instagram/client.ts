@@ -93,6 +93,8 @@ export interface InstagramMedia {
   timestamp: string;
   like_count?: number;
   comments_count?: number;
+  media_url?: string;
+  thumbnail_url?: string;
 }
 
 interface GraphPage<T> {
@@ -106,7 +108,7 @@ export async function getAllMedia(
   maxItems = 50,
 ): Promise<InstagramMedia[]> {
   const fields =
-    "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count";
+    "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count,media_url,thumbnail_url";
   const items: InstagramMedia[] = [];
   let after: string | undefined;
 

@@ -1,0 +1,19 @@
+const compactNumberFormatter = new Intl.NumberFormat("pt-BR", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function formatCompactNumber(value: number): string {
+  return compactNumberFormatter.format(value);
+}
+
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+export function formatDate(value: string | null): string {
+  if (!value) return "—";
+  return dateFormatter.format(new Date(value));
+}

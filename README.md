@@ -106,6 +106,10 @@ Na tela **Analytics** do dashboard, o botão "Sincronizar Instagram" chama `POST
 
 Avisos não fatais (ex.: insights indisponíveis para um post específico) aparecem no resultado do botão sem interromper o restante da sincronização.
 
+### Visualizando os dados
+
+A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original). Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual.
+
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
