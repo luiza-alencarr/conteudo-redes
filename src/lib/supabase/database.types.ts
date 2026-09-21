@@ -1,0 +1,202 @@
+// Tipos escritos manualmente a partir de supabase/migrations/20260101000000_init_schema.sql.
+// Depois de rodar as migrations contra um projeto Supabase real, prefira gerar
+// este arquivo automaticamente com:
+//   npm run supabase:types
+
+export type SocialNetwork = "instagram" | "tiktok" | "youtube" | "linkedin";
+
+export type ContentType =
+  | "image"
+  | "carousel"
+  | "video"
+  | "reel"
+  | "short"
+  | "story"
+  | "live"
+  | "article"
+  | "text";
+
+export type ScriptStatus = "rascunho" | "pronto" | "publicado";
+
+export type CalendarStatus =
+  | "ideia"
+  | "planejado"
+  | "em_producao"
+  | "pronto"
+  | "publicado";
+
+export interface Database {
+  public: {
+    Tables: {
+      social_profiles: {
+        Row: {
+          id: string;
+          network: SocialNetwork;
+          username: string;
+          platform_account_id: string | null;
+          display_name: string | null;
+          profile_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          network: SocialNetwork;
+          username: string;
+          platform_account_id?: string | null;
+          display_name?: string | null;
+          profile_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["social_profiles"]["Insert"]>;
+      };
+      posts: {
+        Row: {
+          id: string;
+          social_profile_id: string | null;
+          network: SocialNetwork;
+          external_id: string | null;
+          content_type: ContentType;
+          caption: string | null;
+          script_id: string | null;
+          published_at: string | null;
+          url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          social_profile_id?: string | null;
+          network: SocialNetwork;
+          external_id?: string | null;
+          content_type: ContentType;
+          caption?: string | null;
+          script_id?: string | null;
+          published_at?: string | null;
+          url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["posts"]["Insert"]>;
+      };
+      post_metrics: {
+        Row: {
+          id: string;
+          post_id: string;
+          likes: number;
+          comments_count: number;
+          views: number;
+          saves: number;
+          shares: number;
+          reach: number;
+          collected_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          likes?: number;
+          comments_count?: number;
+          views?: number;
+          saves?: number;
+          shares?: number;
+          reach?: number;
+          collected_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["post_metrics"]["Insert"]>;
+      };
+      comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          external_id: string | null;
+          author: string | null;
+          text: string;
+          commented_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          external_id?: string | null;
+          author?: string | null;
+          text: string;
+          commented_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["comments"]["Insert"]>;
+      };
+      audience_demographics: {
+        Row: {
+          id: string;
+          network: SocialNetwork;
+          snapshot_date: string;
+          age_range: string | null;
+          gender: string | null;
+          location: string | null;
+          percentage: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          network: SocialNetwork;
+          snapshot_date: string;
+          age_range?: string | null;
+          gender?: string | null;
+          location?: string | null;
+          percentage: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["audience_demographics"]["Insert"]>;
+      };
+      scripts: {
+        Row: {
+          id: string;
+          network: SocialNetwork;
+          title: string;
+          content: string | null;
+          status: ScriptStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          network: SocialNetwork;
+          title: string;
+          content?: string | null;
+          status?: ScriptStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["scripts"]["Insert"]>;
+      };
+      calendar_items: {
+        Row: {
+          id: string;
+          suggested_date: string;
+          network: SocialNetwork;
+          content_type: ContentType;
+          theme: string;
+          status: CalendarStatus;
+          script_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          suggested_date: string;
+          network: SocialNetwork;
+          content_type: ContentType;
+          theme: string;
+          status?: CalendarStatus;
+          script_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["calendar_items"]["Insert"]>;
+      };
+    };
+  };
+}
