@@ -71,12 +71,13 @@ export interface InstagramProfile {
   username: string;
   name?: string;
   profile_picture_url?: string;
+  followers_count?: number;
 }
 
 export function getAccountProfile(igUserId: string, accessToken: string) {
   return graphGet<InstagramProfile>(
     `/${igUserId}`,
-    { fields: "id,username,name,profile_picture_url" },
+    { fields: "id,username,name,profile_picture_url,followers_count" },
     accessToken,
   );
 }
@@ -158,18 +159,33 @@ export interface MediaInsightsResult {
   error?: string;
 }
 
+interface RawInsightMetric {
+  name: string;
+  // A Graph API usa duas formas pro valor conforme o metric: séries temporais
+  // vêm em "values[0].value", metrics agregados (o mesmo formato que
+  // follower_demographics já usa) vêm em "total_value.value". Sem checar as
+  // duas, um metric que só existe no segundo formato lia como 0 em silêncio.
+  values?: { value: number }[];
+  total_value?: { value: number };
+}
+
+function extractMetricValue(metric: RawInsightMetric): number {
+  return metric.total_value?.value ?? metric.values?.[0]?.value ?? 0;
+}
+
 export async function getMediaInsights(
   media: Pick<InstagramMedia, "id" | "media_type" | "media_product_type">,
   accessToken: string,
 ): Promise<MediaInsightsResult> {
   try {
-    const result = await graphGet<{ data: { name: string; values: { value: number }[] }[] }>(
+    const result = await graphGet<{ data: RawInsightMetric[] }>(
       `/${media.id}/insights`,
       { metric: metricsForMedia(media).join(",") },
       accessToken,
     );
+    console.log(`[instagram] insights brutos do post ${media.id}:`, JSON.stringify(result.data));
     const insights = Object.fromEntries(
-      result.data.map((metric) => [metric.name, metric.values[0]?.value ?? 0]),
+      result.data.map((metric) => [metric.name, extractMetricValue(metric)]),
     );
     return { insights };
   } catch (error) {

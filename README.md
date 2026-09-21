@@ -98,17 +98,17 @@ Isso chama o endpoint oficial da Meta (`oauth/access_token` com `grant_type=fb_e
 
 Na tela **Analytics** do dashboard, o botão "Sincronizar Instagram" chama `POST /api/instagram/sync`, que:
 
-1. Busca o perfil da conta e faz upsert em `social_profiles`.
+1. Busca o perfil da conta (incluindo `followers_count`) e faz upsert em `social_profiles`.
 2. Busca os últimos posts (`/media`) e faz upsert em `posts`.
-3. Busca insights por post (`reach`, `saved`, `shares`, `plays`/`total_interactions`) e insere uma nova linha em `post_metrics` a cada sincronização (histórico ao longo do tempo).
+3. Busca insights por post (`reach`, `saved`, `shares`, `views`/`total_interactions`) e insere uma nova linha em `post_metrics` a cada sincronização (histórico ao longo do tempo).
 4. Busca comentários de cada post e faz upsert em `comments`.
 5. Busca demografia da audiência (idade, gênero, país) e substitui o snapshot do dia em `audience_demographics`.
 
-Avisos não fatais (ex.: insights indisponíveis para um post específico) aparecem no resultado do botão sem interromper o restante da sincronização.
+Avisos não fatais (ex.: insights indisponíveis para um post específico) aparecem no resultado do botão sem interromper o restante da sincronização. A resposta bruta de cada chamada de insights também é logada no servidor (`console.log`, visível nos logs de função da Vercel) — útil pra conferir o nome/formato exato de um metric quando a Graph API mudar de novo.
 
 ### Visualizando os dados
 
-A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original). Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual.
+A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance, taxa de engajamento) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original), ordenada por engajamento (curtidas + comentários) do maior pro menor. Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual. A taxa de engajamento é `(curtidas + comentários) / seguidores × 100`; se `followers_count` ainda não tiver sido sincronizado, o card mostra um aviso pra sincronizar de novo em vez de um número errado.
 
 ## Estrutura do banco
 

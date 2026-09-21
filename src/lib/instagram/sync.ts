@@ -52,6 +52,7 @@ export async function syncInstagram(): Promise<SyncSummary> {
         platform_account_id: profile.id,
         display_name: profile.name ?? null,
         profile_url: `https://instagram.com/${profile.username}`,
+        followers_count: profile.followers_count ?? null,
       },
       { onConflict: "network,username" },
     )

@@ -36,6 +36,7 @@ export interface Database {
           platform_account_id: string | null;
           display_name: string | null;
           profile_url: string | null;
+          followers_count: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -46,6 +47,7 @@ export interface Database {
           platform_account_id?: string | null;
           display_name?: string | null;
           profile_url?: string | null;
+          followers_count?: number | null;
           created_at?: string;
           updated_at?: string;
         };
