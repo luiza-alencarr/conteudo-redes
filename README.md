@@ -72,6 +72,40 @@ Isso regenera `src/lib/supabase/database.types.ts` a partir do banco local. Rode
 
 O app usa Supabase Auth com um único usuário. `enable_signup` está desabilitado em `supabase/config.toml`; crie o usuário manualmente pelo Supabase Studio (local: http://localhost:54323, ou no dashboard do projeto remoto) em Authentication > Users.
 
+## Integração com Instagram
+
+Usa a Instagram Graph API (conta comercial/criador conectada a uma Página do Facebook) para importar posts, métricas, comentários e demografia da audiência.
+
+### Configuração
+
+Preencha em `.env.local` (veja `.env.example`):
+
+- `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` — do app em [developers.facebook.com](https://developers.facebook.com)
+- `INSTAGRAM_ACCESS_TOKEN` — token de acesso
+- `INSTAGRAM_BUSINESS_ACCOUNT_ID` — ID da conta comercial/criador do Instagram
+
+### Trocando o token por um de longa duração (~60 dias)
+
+Tokens gerados no Graph API Explorer são de curta duração (~1h-2h). Troque por um de longa duração com:
+
+```bash
+npm run instagram:exchange-token -- <token-de-curta-duracao>
+```
+
+Isso chama o endpoint oficial da Meta (`oauth/access_token` com `grant_type=fb_exchange_token`) e já atualiza `INSTAGRAM_ACCESS_TOKEN` em `.env.local`. Um token de longa duração ainda expira (~60 dias) — por enquanto repita esse comando quando ele vencer; automatizar a renovação fica para uma próxima etapa.
+
+### Sincronizando dados
+
+Na tela **Analytics** do dashboard, o botão "Sincronizar Instagram" chama `POST /api/instagram/sync`, que:
+
+1. Busca o perfil da conta e faz upsert em `social_profiles`.
+2. Busca os últimos posts (`/media`) e faz upsert em `posts`.
+3. Busca insights por post (`reach`, `saved`, `shares`, `plays`/`total_interactions`) e insere uma nova linha em `post_metrics` a cada sincronização (histórico ao longo do tempo).
+4. Busca comentários de cada post e faz upsert em `comments`.
+5. Busca demografia da audiência (idade, gênero, país) e substitui o snapshot do dia em `audience_demographics`.
+
+Avisos não fatais (ex.: insights indisponíveis para um post específico) aparecem no resultado do botão sem interromper o restante da sincronização.
+
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
@@ -84,4 +118,4 @@ O app usa Supabase Auth com um único usuário. `enable_signup` está desabilita
 
 ## Próximos passos
 
-Integrações com as APIs do Instagram e TikTok para importar posts/métricas automaticamente ainda não foram implementadas — por enquanto os dados são inseridos manualmente ou via Studio.
+Integração com TikTok ainda não foi implementada. A sincronização do Instagram é manual (botão em Analytics); automatizar (cron/job) e renovar o token automaticamente ficam para uma próxima etapa.

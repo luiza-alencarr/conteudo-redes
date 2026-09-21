@@ -34,6 +34,13 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path),
   );
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
+
+  // Rotas de API respondem seu próprio 401 em vez de receber um redirect
+  // HTML, que quebraria clientes que esperam JSON (ex.: fetch no browser).
+  if (!user && isApiRoute) {
+    return supabaseResponse;
+  }
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();

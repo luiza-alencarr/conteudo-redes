@@ -1,4 +1,4 @@
-// Tipos escritos manualmente a partir de supabase/migrations/20260101000000_init_schema.sql.
+// Tipos escritos manualmente a partir das migrations em supabase/migrations/.
 // Depois de rodar as migrations contra um projeto Supabase real, prefira gerar
 // este arquivo automaticamente com:
 //   npm run supabase:types
@@ -50,6 +50,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["social_profiles"]["Insert"]>;
+        Relationships: [];
       };
       posts: {
         Row: {
@@ -79,6 +80,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["posts"]["Insert"]>;
+        Relationships: [];
       };
       post_metrics: {
         Row: {
@@ -106,6 +108,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["post_metrics"]["Insert"]>;
+        Relationships: [];
       };
       comments: {
         Row: {
@@ -127,6 +130,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["comments"]["Insert"]>;
+        Relationships: [];
       };
       audience_demographics: {
         Row: {
@@ -150,6 +154,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["audience_demographics"]["Insert"]>;
+        Relationships: [];
       };
       scripts: {
         Row: {
@@ -171,6 +176,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["scripts"]["Insert"]>;
+        Relationships: [];
       };
       calendar_items: {
         Row: {
@@ -196,7 +202,17 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["calendar_items"]["Insert"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: {
+      social_network: SocialNetwork;
+      content_type: ContentType;
+      script_status: ScriptStatus;
+      calendar_status: CalendarStatus;
+    };
+    CompositeTypes: Record<string, never>;
   };
 }

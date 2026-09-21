@@ -1,0 +1,216 @@
+const GRAPH_API_VERSION = process.env.INSTAGRAM_GRAPH_API_VERSION ?? "v21.0";
+const GRAPH_API_BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
+
+export class InstagramApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public body: unknown,
+  ) {
+    super(message);
+    this.name = "InstagramApiError";
+  }
+}
+
+async function graphGet<T>(
+  path: string,
+  params: Record<string, string>,
+  accessToken: string,
+): Promise<T> {
+  const url = new URL(`${GRAPH_API_BASE_URL}${path}`);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  url.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(url.toString());
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new InstagramApiError(
+      body?.error?.message ?? "Erro na Instagram Graph API",
+      response.status,
+      body,
+    );
+  }
+
+  return body as T;
+}
+
+export async function exchangeForLongLivedToken({
+  appId,
+  appSecret,
+  shortLivedToken,
+}: {
+  appId: string;
+  appSecret: string;
+  shortLivedToken: string;
+}): Promise<{ accessToken: string; expiresInSeconds: number }> {
+  const url = new URL(`${GRAPH_API_BASE_URL}/oauth/access_token`);
+  url.searchParams.set("grant_type", "fb_exchange_token");
+  url.searchParams.set("client_id", appId);
+  url.searchParams.set("client_secret", appSecret);
+  url.searchParams.set("fb_exchange_token", shortLivedToken);
+
+  const response = await fetch(url.toString());
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new InstagramApiError(
+      body?.error?.message ?? "Falha ao trocar o token de acesso",
+      response.status,
+      body,
+    );
+  }
+
+  return { accessToken: body.access_token, expiresInSeconds: body.expires_in };
+}
+
+export interface InstagramProfile {
+  id: string;
+  username: string;
+  name?: string;
+  profile_picture_url?: string;
+}
+
+export function getAccountProfile(igUserId: string, accessToken: string) {
+  return graphGet<InstagramProfile>(
+    `/${igUserId}`,
+    { fields: "id,username,name,profile_picture_url" },
+    accessToken,
+  );
+}
+
+export type InstagramMediaType = "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+export type InstagramMediaProductType = "FEED" | "REELS" | "STORY" | "AD";
+
+export interface InstagramMedia {
+  id: string;
+  caption?: string;
+  media_type: InstagramMediaType;
+  media_product_type?: InstagramMediaProductType;
+  permalink?: string;
+  timestamp: string;
+  like_count?: number;
+  comments_count?: number;
+}
+
+interface GraphPage<T> {
+  data: T[];
+  paging?: { cursors?: { after?: string }; next?: string };
+}
+
+export async function getAllMedia(
+  igUserId: string,
+  accessToken: string,
+  maxItems = 50,
+): Promise<InstagramMedia[]> {
+  const fields =
+    "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count";
+  const items: InstagramMedia[] = [];
+  let after: string | undefined;
+
+  do {
+    const params: Record<string, string> = { fields, limit: "25" };
+    if (after) params.after = after;
+
+    const page = await graphGet<GraphPage<InstagramMedia>>(
+      `/${igUserId}/media`,
+      params,
+      accessToken,
+    );
+
+    items.push(...page.data);
+    after = page.paging?.next ? page.paging.cursors?.after : undefined;
+  } while (after && items.length < maxItems);
+
+  return items.slice(0, maxItems);
+}
+
+function metricsForMedia(media: Pick<InstagramMedia, "media_product_type">): string[] {
+  if (media.media_product_type === "REELS") {
+    return ["reach", "saved", "shares", "total_interactions", "plays"];
+  }
+  if (media.media_product_type === "STORY") {
+    return ["reach", "replies", "exits", "taps_forward", "taps_back"];
+  }
+  return ["reach", "saved", "shares", "total_interactions"];
+}
+
+export interface InstagramMediaInsights {
+  reach?: number;
+  saved?: number;
+  shares?: number;
+  plays?: number;
+}
+
+// A Meta muda com frequência quais métricas são válidas por tipo de mídia;
+// uma falha aqui não deve derrubar a sincronização inteira.
+export async function getMediaInsights(
+  media: Pick<InstagramMedia, "id" | "media_product_type">,
+  accessToken: string,
+): Promise<InstagramMediaInsights> {
+  try {
+    const result = await graphGet<{ data: { name: string; values: { value: number }[] }[] }>(
+      `/${media.id}/insights`,
+      { metric: metricsForMedia(media).join(",") },
+      accessToken,
+    );
+    return Object.fromEntries(
+      result.data.map((metric) => [metric.name, metric.values[0]?.value ?? 0]),
+    );
+  } catch (error) {
+    console.warn(
+      `Falha ao buscar insights do post ${media.id}:`,
+      error instanceof Error ? error.message : error,
+    );
+    return {};
+  }
+}
+
+export interface InstagramComment {
+  id: string;
+  text: string;
+  username?: string;
+  timestamp: string;
+}
+
+export async function getMediaComments(
+  mediaId: string,
+  accessToken: string,
+): Promise<InstagramComment[]> {
+  const result = await graphGet<GraphPage<InstagramComment>>(
+    `/${mediaId}/comments`,
+    { fields: "id,text,username,timestamp", limit: "50" },
+    accessToken,
+  );
+  return result.data;
+}
+
+export type DemographicBreakdown = "age" | "gender" | "country";
+
+export interface DemographicResult {
+  dimension_values: string[];
+  value: number;
+}
+
+export async function getAudienceDemographics(
+  igUserId: string,
+  breakdown: DemographicBreakdown,
+  accessToken: string,
+): Promise<DemographicResult[]> {
+  const result = await graphGet<{
+    data: { total_value?: { breakdowns?: { results: DemographicResult[] }[] } }[];
+  }>(
+    `/${igUserId}/insights`,
+    {
+      metric: "follower_demographics",
+      period: "lifetime",
+      metric_type: "total_value",
+      breakdown,
+    },
+    accessToken,
+  );
+
+  return result.data[0]?.total_value?.breakdowns?.[0]?.results ?? [];
+}
