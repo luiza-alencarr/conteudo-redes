@@ -22,7 +22,7 @@ export default async function AnalyticsPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Posts" value={totals.postsCount} />
+        <StatTile label="Posts (60 dias)" value={totals.postsLast60Days} />
         <StatTile label="Curtidas" value={totals.likes} />
         <StatTile label="Comentários" value={totals.comments} />
         <StatTile label="Views" value={totals.views} />

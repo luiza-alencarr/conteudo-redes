@@ -12,7 +12,9 @@ export interface PostWithMetrics extends PostRow {
 }
 
 export interface AnalyticsTotals {
-  postsCount: number;
+  // Posts publicados nos últimos 60 dias — não é o total de posts sincronizados
+  // (esse é limitado a 50 pelo código de sync e não representa um período real).
+  postsLast60Days: number;
   likes: number;
   comments: number;
   views: number;
@@ -40,11 +42,9 @@ function getTotalInteractions(post: PostWithMetrics): number {
   );
 }
 
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-
-function isWithinLast30Days(post: PostWithMetrics, now: number): boolean {
+function isWithinLastDays(post: PostWithMetrics, now: number, days: number): boolean {
   if (!post.published_at) return false;
-  return now - new Date(post.published_at).getTime() <= THIRTY_DAYS_MS;
+  return now - new Date(post.published_at).getTime() <= days * 24 * 60 * 60 * 1000;
 }
 
 function byPublishedAtDesc(a: PostWithMetrics, b: PostWithMetrics): number {
@@ -112,13 +112,17 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
   // interações. Fora da janela, mantém a ordem cronológica normal.
   const now = Date.now();
   const recentPosts = postsWithMetrics
-    .filter((post) => isWithinLast30Days(post, now))
+    .filter((post) => isWithinLastDays(post, now, 30))
     .sort((a, b) => getTotalInteractions(b) - getTotalInteractions(a));
   const olderPosts = postsWithMetrics
-    .filter((post) => !isWithinLast30Days(post, now))
+    .filter((post) => !isWithinLastDays(post, now, 30))
     .sort(byPublishedAtDesc);
 
   const sortedPosts = [...recentPosts, ...olderPosts];
+
+  const postsLast60Days = postsWithMetrics.filter((post) =>
+    isWithinLastDays(post, now, 60),
+  ).length;
 
   const totals = postsWithMetrics.reduce<AnalyticsTotals>(
     (acc, post) => {
@@ -129,7 +133,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       return acc;
     },
     {
-      postsCount: postsWithMetrics.length,
+      postsLast60Days,
       likes: 0,
       comments: 0,
       views: 0,

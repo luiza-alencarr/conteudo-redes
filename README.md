@@ -108,7 +108,9 @@ Avisos não fatais (ex.: insights indisponíveis para um post específico) apare
 
 ### Visualizando os dados
 
-A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts, curtidas, comentários, views, alcance, taxa de engajamento) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original). Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual.
+A tela **Analytics** lê direto do Supabase (sem cache): totais no topo (posts nos últimos 60 dias, curtidas, comentários, views, alcance, taxa de engajamento) e uma tabela com cada post (miniatura, legenda, tipo, data, curtidas, comentários, views, alcance e link pro post original). Os totais e os números por post usam sempre a métrica mais recente coletada para aquele post — cada sincronização soma uma nova linha em `post_metrics`, então o histórico fica no banco mesmo a tela só mostrando o valor atual.
+
+O card "Posts (60 dias)" conta quantos posts foram **publicados** nos últimos 60 dias (a partir de `published_at`), não quantos posts o banco tem no total — esse total depende de quantos a última sincronização trouxe (limitado a 50 por padrão) e não representa um período real.
 
 **Ordenação da tabela**: posts dos últimos 30 dias vêm primeiro, ordenados por engajamento (curtidas + comentários + compartilhamentos + salvamentos) do maior pro menor; posts mais antigos que isso vêm depois, ordenados por data de publicação — um post de meses atrás não "compete" por ter tido mais tempo pra acumular interações.
 
