@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import * as instagram from "@/lib/instagram/client";
 import type { Database } from "@/lib/supabase/database.types";
+import { extractCategory } from "@/lib/format";
 
 type ContentType = Database["public"]["Tables"]["posts"]["Row"]["content_type"];
 
@@ -86,6 +87,7 @@ export async function syncInstagram(): Promise<SyncSummary> {
           thumbnail_url: pickThumbnailUrl(media),
           duration_seconds:
             typeof media.duration === "number" ? Math.round(media.duration) : null,
+          category: extractCategory(media.caption ?? null),
         },
         { onConflict: "network,external_id" },
       )

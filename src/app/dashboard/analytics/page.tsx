@@ -3,6 +3,7 @@ import { SyncInstagramButton } from "@/components/dashboard/analytics/sync-insta
 import { TikTokPanel } from "@/components/dashboard/analytics/tiktok-panel";
 import { StatTile } from "@/components/dashboard/analytics/stat-tile";
 import { PostsTable } from "@/components/dashboard/analytics/posts-table";
+import { CategorySummaryCard } from "@/components/dashboard/analytics/category-summary";
 import { formatPercentage } from "@/lib/format";
 import { getAnalyticsData } from "./queries";
 import { getTikTokConnectionStatus } from "@/lib/tiktok/connection";
@@ -12,7 +13,7 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ tiktok_connected?: string; tiktok_error?: string }>;
 }) {
-  const [{ posts, totals }, tiktokStatus, params] = await Promise.all([
+  const [{ posts, totals, categorySummaries }, tiktokStatus, params] = await Promise.all([
     getAnalyticsData(),
     getTikTokConnectionStatus(),
     searchParams,
@@ -73,6 +74,8 @@ export default async function AnalyticsPage({
           </div>
         )}
       </div>
+
+      <CategorySummaryCard summaries={categorySummaries} />
 
       <div className="mt-6 flex flex-1 flex-col">
         <PostsTable posts={posts} />

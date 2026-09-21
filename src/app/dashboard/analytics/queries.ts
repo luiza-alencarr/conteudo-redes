@@ -25,9 +25,19 @@ export interface AnalyticsTotals {
   engagementRate: number | null;
 }
 
+export interface CategorySummary {
+  category: string;
+  postsCount: number;
+  avgLikes: number;
+  avgComments: number;
+  avgViews: number;
+  avgEngagement: number;
+}
+
 export interface AnalyticsData {
   posts: PostWithMetrics[];
   totals: AnalyticsTotals;
+  categorySummaries: CategorySummary[];
 }
 
 // Interações totais de um post: curtidas + comentários + compartilhamentos +
@@ -51,6 +61,44 @@ function byPublishedAtDesc(a: PostWithMetrics, b: PostWithMetrics): number {
   if (!a.published_at) return 1;
   if (!b.published_at) return -1;
   return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+}
+
+// Desempenho médio por categoria (última hashtag da legenda), pra comparar
+// qual categoria performa melhor. Considera todos os posts categorizados,
+// não só o período usado pra ordenar a tabela.
+function computeCategorySummaries(posts: PostWithMetrics[]): CategorySummary[] {
+  const groups = new Map<string, PostWithMetrics[]>();
+  for (const post of posts) {
+    if (!post.category) continue;
+    const list = groups.get(post.category) ?? [];
+    list.push(post);
+    groups.set(post.category, list);
+  }
+
+  const summaries = Array.from(groups.entries()).map(([category, categoryPosts]) => {
+    const count = categoryPosts.length;
+    const sums = categoryPosts.reduce(
+      (acc, post) => {
+        acc.likes += post.metrics?.likes ?? 0;
+        acc.comments += post.metrics?.comments_count ?? 0;
+        acc.views += post.metrics?.views ?? 0;
+        acc.engagement += getTotalInteractions(post);
+        return acc;
+      },
+      { likes: 0, comments: 0, views: 0, engagement: 0 },
+    );
+
+    return {
+      category,
+      postsCount: count,
+      avgLikes: sums.likes / count,
+      avgComments: sums.comments / count,
+      avgViews: sums.views / count,
+      avgEngagement: sums.engagement / count,
+    };
+  });
+
+  return summaries.sort((a, b) => b.avgEngagement - a.avgEngagement);
 }
 
 export async function getAnalyticsData(): Promise<AnalyticsData> {
@@ -159,5 +207,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       perPostRates.reduce((sum, rate) => sum + rate, 0) / perPostRates.length;
   }
 
-  return { posts: sortedPosts, totals };
+  const categorySummaries = computeCategorySummaries(postsWithMetrics);
+
+  return { posts: sortedPosts, totals, categorySummaries };
 }

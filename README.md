@@ -122,6 +122,10 @@ O card "Posts (60 dias)" conta quantos posts foram **publicados** nos últimos 6
 - **Legenda completa** e **duração** (formato `m:ss`, quando a rede de origem expõe esse dado).
 - **Roteiro / Notas** — campo de texto livre, editável ali mesmo, salvo no banco (`posts.notes`) via Server Action. É o único campo dessa tela que não vem de nenhuma API — é seu, pra documentar o roteiro real do vídeo ou por que ele funcionou.
 
+**Categoria**: extraída automaticamente da **última hashtag** da legenda (convenção: terminar o post com uma hashtag de categoria, ex.: `...#bastidores`). É só regex, sem IA — pega o último `#palavra` da legenda e normaliza pra minúsculo (`#Bastidores` e `#bastidores` viram a mesma categoria). Sai como chip na tabela e na linha expandida; posts antigos ou sem hashtag no final ficam sem categoria, sem problema. Como o valor é recalculado a cada sincronização a partir da legenda atual, posts que já estão no banco só ganham categoria a partir da próxima vez que forem re-sincronizados (o sync sempre traz os últimos 50 posts de novo).
+
+Acima da tabela tem um filtro por categoria (mostra só os posts daquela categoria) e, acima dele, um card "desempenho por categoria" com curtidas/comentários/views médios e um "engajamento médio" (curtidas + comentários + compartilhamentos + salvamentos, por post) — esse card sempre considera todos os posts categorizados, independente do filtro selecionado na tabela, já que o objetivo dele é comparar categorias entre si.
+
 **Duração**: buscada na sincronização (`duration` da Instagram Graph API e da TikTok API). Como não é possível confirmar sem testar contra as APIs reais se o campo `duration` está disponível pra mídia comum do Instagram, a sincronização tenta com esse campo e, se a API rejeitar, tenta de novo sem ele automaticamente (sem quebrar o resto do sync) — nesse caso a coluna "Duração" fica vazia (`—`) até isso ser resolvido.
 
 ## Integração com TikTok
@@ -172,7 +176,7 @@ O PDF é gerado com [`@react-pdf/renderer`](https://react-pdf.org/) direto no se
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
-- `posts` — conteúdos publicados (rede, id externo, tipo, legenda, data, link, duração, notas)
+- `posts` — conteúdos publicados (rede, id externo, tipo, legenda, data, link, duração, notas, categoria)
 - `post_metrics` — métricas coletadas por post ao longo do tempo (curtidas, comentários, views, salvamentos, alcance)
 - `comments` — comentários dos posts (com `like_count`, usado pra ordenar por relevância no relatório em PDF)
 - `audience_demographics` — dados demográficos da audiência por rede/data

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import * as tiktok from "@/lib/tiktok/client";
 import { getValidAccessToken } from "@/lib/tiktok/connection";
+import { extractCategory } from "@/lib/format";
 
 export interface TikTokSyncSummary {
   postsSynced: number;
@@ -54,6 +55,7 @@ export async function syncTikTok(): Promise<TikTokSyncSummary> {
           thumbnail_url: video.cover_image_url ?? null,
           duration_seconds:
             typeof video.duration === "number" ? Math.round(video.duration) : null,
+          category: extractCategory(video.video_description ?? null),
         },
         { onConflict: "network,external_id" },
       )

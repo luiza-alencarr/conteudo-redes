@@ -53,3 +53,15 @@ export function extractHook(caption: string | null): string | null {
   const hook = trimmed.slice(0, cutoff).trim();
   return hook || trimmed;
 }
+
+const HASHTAG_REGEX = /#([\p{L}\p{N}_]+)/gu;
+
+// Categoria = a ÚLTIMA hashtag da legenda (convenção: sempre terminar o post
+// com uma hashtag de categoria, ex.: "...#bastidores"). Sem IA, só regex;
+// normaliza pra minúsculo pra "#Bastidores" e "#bastidores" caírem juntos.
+export function extractCategory(caption: string | null): string | null {
+  if (!caption) return null;
+  const matches = [...caption.matchAll(HASHTAG_REGEX)];
+  if (matches.length === 0) return null;
+  return matches[matches.length - 1][1].toLowerCase();
+}
