@@ -208,6 +208,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["calendar_items"]["Insert"]>;
         Relationships: [];
       };
+      oauth_connections: {
+        Row: {
+          id: string;
+          network: SocialNetwork;
+          access_token: string;
+          refresh_token: string | null;
+          access_token_expires_at: string | null;
+          refresh_token_expires_at: string | null;
+          scope: string | null;
+          open_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          network: SocialNetwork;
+          access_token: string;
+          refresh_token?: string | null;
+          access_token_expires_at?: string | null;
+          refresh_token_expires_at?: string | null;
+          scope?: string | null;
+          open_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["oauth_connections"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

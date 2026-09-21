@@ -14,13 +14,20 @@ const CONTENT_TYPE_LABELS: Record<PostWithMetrics["content_type"], string> = {
   text: "Texto",
 };
 
+const NETWORK_LABELS: Record<PostWithMetrics["network"], string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+};
+
 export function PostsTable({ posts }: { posts: PostWithMetrics[] }) {
   if (posts.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white p-12">
         <p className="max-w-md text-center text-sm text-neutral-500">
-          Nenhum post sincronizado ainda. Use o botão acima para importar os dados do
-          Instagram.
+          Nenhum post sincronizado ainda. Use os botões acima para importar os dados do
+          Instagram e do TikTok.
         </p>
       </div>
     );
@@ -32,6 +39,7 @@ export function PostsTable({ posts }: { posts: PostWithMetrics[] }) {
         <thead>
           <tr className="border-b border-neutral-200 text-xs text-neutral-500">
             <th className="px-4 py-3 font-medium">Post</th>
+            <th className="px-4 py-3 font-medium">Rede</th>
             <th className="px-4 py-3 font-medium">Tipo</th>
             <th className="px-4 py-3 font-medium">Publicado em</th>
             <th className="px-4 py-3 text-right font-medium">Curtidas</th>
@@ -65,6 +73,11 @@ export function PostsTable({ posts }: { posts: PostWithMetrics[] }) {
                   </p>
                 </div>
               </td>
+              <td className="px-4 py-3">
+                <span className="inline-flex items-center rounded-full border border-neutral-200 px-2 py-0.5 text-xs text-neutral-600">
+                  {NETWORK_LABELS[post.network]}
+                </span>
+              </td>
               <td className="px-4 py-3 text-neutral-500">
                 {CONTENT_TYPE_LABELS[post.content_type]}
               </td>
@@ -90,7 +103,7 @@ export function PostsTable({ posts }: { posts: PostWithMetrics[] }) {
                     className="text-neutral-400 hover:text-neutral-900"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    <span className="sr-only">Abrir no Instagram</span>
+                    <span className="sr-only">Abrir post original</span>
                   </a>
                 )}
               </td>

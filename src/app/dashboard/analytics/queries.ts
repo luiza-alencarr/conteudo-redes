@@ -59,13 +59,16 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
   const { data: posts, error: postsError } = await supabase
     .from("posts")
     .select("*")
-    .eq("network", "instagram")
+    .in("network", ["instagram", "tiktok"])
     .order("published_at", { ascending: false, nullsFirst: false });
 
   if (postsError) {
     throw new Error(`Falha ao carregar posts: ${postsError.message}`);
   }
 
+  // Seguidores e taxa de engajamento só existem pro Instagram por enquanto
+  // (é de onde vem followers_count); o TikTok entra nos totais de posts e
+  // interações, mas não nesse cálculo específico.
   const { data: profile, error: profileError } = await supabase
     .from("social_profiles")
     .select("followers_count")
@@ -147,8 +150,9 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
   // post, não a soma de todas as interações dividida pelos seguidores uma
   // única vez (isso infla o número conforme o número de posts cresce, e não
   // é uma taxa "por post" de verdade).
-  if (followersCount && followersCount > 0 && postsWithMetrics.length > 0) {
-    const perPostRates = postsWithMetrics.map(
+  const instagramPosts = postsWithMetrics.filter((post) => post.network === "instagram");
+  if (followersCount && followersCount > 0 && instagramPosts.length > 0) {
+    const perPostRates = instagramPosts.map(
       (post) => (getTotalInteractions(post) / followersCount) * 100,
     );
     totals.engagementRate =

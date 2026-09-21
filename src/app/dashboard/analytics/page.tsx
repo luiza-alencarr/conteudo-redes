@@ -1,12 +1,22 @@
 import { BarChart3 } from "lucide-react";
 import { SyncInstagramButton } from "@/components/dashboard/analytics/sync-instagram-button";
+import { TikTokPanel } from "@/components/dashboard/analytics/tiktok-panel";
 import { StatTile } from "@/components/dashboard/analytics/stat-tile";
 import { PostsTable } from "@/components/dashboard/analytics/posts-table";
 import { formatPercentage } from "@/lib/format";
 import { getAnalyticsData } from "./queries";
+import { getTikTokConnectionStatus } from "@/lib/tiktok/connection";
 
-export default async function AnalyticsPage() {
-  const { posts, totals } = await getAnalyticsData();
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tiktok_connected?: string; tiktok_error?: string }>;
+}) {
+  const [{ posts, totals }, tiktokStatus, params] = await Promise.all([
+    getAnalyticsData(),
+    getTikTokConnectionStatus(),
+    searchParams,
+  ]);
 
   return (
     <div className="flex h-full flex-col">
@@ -18,8 +28,22 @@ export default async function AnalyticsPage() {
           <h1 className="text-2xl font-semibold text-neutral-900">Analytics</h1>
         </div>
 
-        <SyncInstagramButton />
+        <div className="flex items-start gap-3">
+          <SyncInstagramButton />
+          <TikTokPanel connected={tiktokStatus.connected} username={tiktokStatus.username} />
+        </div>
       </div>
+
+      {params.tiktok_connected && (
+        <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+          TikTok conectado com sucesso.
+        </p>
+      )}
+      {params.tiktok_error && (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          Falha ao conectar o TikTok: {params.tiktok_error}
+        </p>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="Posts (60 dias)" value={totals.postsLast60Days} />

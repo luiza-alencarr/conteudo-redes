@@ -116,6 +116,41 @@ O card "Posts (60 dias)" conta quantos posts foram **publicados** nos últimos 6
 
 **Taxa de engajamento**: é a média, entre todos os posts, de `(curtidas + comentários + compartilhamentos + salvamentos) / seguidores × 100` calculado post a post — não a soma de todas as interações do perfil dividida pelos seguidores uma única vez (isso infla o número conforme mais posts são sincronizados). Se `followers_count` ainda não tiver sido sincronizado, o card mostra um aviso pra sincronizar de novo em vez de um número errado.
 
+## Integração com TikTok
+
+Usa o login OAuth 2.0 do TikTok for Developers (com PKCE) pra conectar a própria conta e importar vídeos e métricas básicas (views, curtidas, comentários, compartilhamentos).
+
+### Configuração
+
+Preencha em `.env.local` (veja `.env.example`):
+
+- `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` — do app em [developers.tiktok.com](https://developers.tiktok.com)
+- `TIKTOK_REDIRECT_URI` — precisa ser **exatamente** a URL de redirect cadastrada no app (ex.: `https://seu-dominio.vercel.app/api/auth/tiktok/callback`)
+
+**Modo Sandbox**: enquanto o app não for submetido pra revisão da TikTok, o login só funciona pras contas cadastradas como "target user" no painel do app.
+
+### Conectando a conta
+
+Na tela **Analytics**, o botão "Conectar TikTok":
+
+1. Redireciona pra tela de autorização do TikTok (`/v2/auth/authorize/`), com PKCE (`code_challenge`/`code_verifier`) e um `state` aleatório guardados em cookies httpOnly de curta duração pra proteção contra CSRF.
+2. O TikTok redireciona de volta pra `TIKTOK_REDIRECT_URI` (`GET /api/auth/tiktok/callback`) com um `code`.
+3. O callback confere o `state`, troca o `code` por `access_token` + `refresh_token` (`POST /v2/oauth/token/`) e salva na tabela `oauth_connections` (upsert por `network`).
+
+O access token dura pouco (o TikTok costuma emitir por ~24h); a sincronização usa o `refresh_token` pra renová-lo automaticamente quando precisa, sem precisar reconectar manualmente — só quando o refresh token expirar (~365 dias) é que será preciso clicar em "Conectar TikTok" de novo.
+
+### Sincronizando dados
+
+Depois de conectado, o botão "Sincronizar TikTok" chama `POST /api/tiktok/sync`, que:
+
+1. Busca o perfil (`/v2/user/info/`) e faz upsert em `social_profiles` com `network = 'tiktok'`.
+2. Busca os últimos vídeos (`/v2/video/list/`, até 50) e faz upsert em `posts` (`content_type = 'short'`).
+3. Insere uma nova linha em `post_metrics` por vídeo a cada sincronização, com `views`, `likes`, `comments_count` e `shares` — todos vêm direto no objeto do vídeo, sem precisar de uma chamada de insights à parte como no Instagram. A API não expõe salvamentos nem alcance no escopo básico, então esses campos ficam em 0 pro TikTok.
+
+Os posts do TikTok aparecem na mesma tabela e nos mesmos totais do Instagram na tela de Analytics (com uma coluna "Rede" pra diferenciar); a taxa de engajamento continua calculada só sobre o Instagram, já que é de lá que vem o número de seguidores.
+
+> **Nota**: os nomes de campo e endpoints acima seguem a documentação pública da TikTok API v2 no momento da implementação — como já aconteceu com o Instagram, a TikTok pode ajustar nomes de métricas/escopos. Se a sincronização ou o login falharem, o erro retornado pela API aparece na tela (ou nos logs de função da Vercel) e deve indicar o que precisa ajustar.
+
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
@@ -125,7 +160,8 @@ O card "Posts (60 dias)" conta quantos posts foram **publicados** nos últimos 6
 - `audience_demographics` — dados demográficos da audiência por rede/data
 - `scripts` — roteiros de conteúdo (rascunho/pronto/publicado)
 - `calendar_items` — itens do calendário editorial (data sugerida, rede, tema, status)
+- `oauth_connections` — tokens OAuth de redes com login (TikTok), um registro por rede
 
 ## Próximos passos
 
-Integração com TikTok ainda não foi implementada. A sincronização do Instagram é manual (botão em Analytics); automatizar (cron/job) e renovar o token automaticamente ficam para uma próxima etapa.
+A sincronização de Instagram e TikTok é manual (botões em Analytics); automatizar (cron/job) e renovar tokens automaticamente ficam para uma próxima etapa. Integração com YouTube e LinkedIn ainda não foi implementada.
