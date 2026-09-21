@@ -107,7 +107,7 @@ export async function syncInstagram(): Promise<SyncSummary> {
       post_id: post.id,
       likes: media.like_count ?? 0,
       comments_count: media.comments_count ?? 0,
-      views: insights.plays ?? 0,
+      views: insights.views ?? 0,
       saves: insights.saved ?? 0,
       shares: insights.shares ?? 0,
       reach: insights.reach ?? 0,

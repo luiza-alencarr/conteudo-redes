@@ -136,18 +136,18 @@ function metricsForMedia(
     return ["reach", "replies", "exits", "taps_forward", "taps_back"];
   }
   const base = ["reach", "saved", "shares", "total_interactions"];
-  // "plays" é o metric de visualizações de vídeo na Graph API atual (substituiu
-  // "video_views"); vale tanto pra Reels quanto pra vídeo comum publicado no
-  // feed — sem essa checagem por media_type, o segundo caso nunca pedia a
-  // métrica e "views" ficava sempre 0.
-  return media.media_type === "VIDEO" ? [...base, "plays"] : base;
+  // "views" é o metric de visualizações de vídeo na Graph API atual — "plays"
+  // (nome usado numa versão anterior) é rejeitado com "must be one of the
+  // following values: ..." e "video_views" também já foi descontinuado antes
+  // dele. Vale tanto pra Reels quanto pra vídeo comum publicado no feed.
+  return media.media_type === "VIDEO" ? [...base, "views"] : base;
 }
 
 export interface InstagramMediaInsights {
   reach?: number;
   saved?: number;
   shares?: number;
-  plays?: number;
+  views?: number;
 }
 
 export interface MediaInsightsResult {
