@@ -1,4 +1,4 @@
-import { BarChart3 } from "lucide-react";
+import { BarChart3, FileDown } from "lucide-react";
 import { SyncInstagramButton } from "@/components/dashboard/analytics/sync-instagram-button";
 import { TikTokPanel } from "@/components/dashboard/analytics/tiktok-panel";
 import { StatTile } from "@/components/dashboard/analytics/stat-tile";
@@ -31,6 +31,13 @@ export default async function AnalyticsPage({
         <div className="flex items-start gap-3">
           <SyncInstagramButton />
           <TikTokPanel connected={tiktokStatus.connected} username={tiktokStatus.username} />
+          <a
+            href="/api/analytics/export-pdf"
+            className="flex w-fit items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+          >
+            <FileDown className="h-4 w-4" />
+            Exportar PDF
+          </a>
         </div>
       </div>
 

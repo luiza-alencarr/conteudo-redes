@@ -201,6 +201,7 @@ export interface InstagramComment {
   text?: string;
   username?: string;
   timestamp: string;
+  like_count?: number;
 }
 
 export async function getMediaComments(
@@ -209,7 +210,7 @@ export async function getMediaComments(
 ): Promise<InstagramComment[]> {
   const result = await graphGet<GraphPage<InstagramComment>>(
     `/${mediaId}/comments`,
-    { fields: "id,text,username,timestamp", limit: "50" },
+    { fields: "id,text,username,timestamp,like_count", limit: "50" },
     accessToken,
   );
   return result.data;

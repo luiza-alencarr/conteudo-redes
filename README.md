@@ -151,12 +151,22 @@ Os posts do TikTok aparecem na mesma tabela e nos mesmos totais do Instagram na 
 
 > **Nota**: os nomes de campo e endpoints acima seguem a documentação pública da TikTok API v2 no momento da implementação — como já aconteceu com o Instagram, a TikTok pode ajustar nomes de métricas/escopos. Se a sincronização ou o login falharem, o erro retornado pela API aparece na tela (ou nos logs de função da Vercel) e deve indicar o que precisa ajustar.
 
+## Exportando um relatório em PDF
+
+Na tela **Analytics**, o botão "Exportar PDF" baixa um relatório gerado sob demanda (`GET /api/analytics/export-pdf`, sem cache) com:
+
+1. **Resumo geral dos últimos 30 dias** — posts, curtidas, comentários, views, alcance e taxa de engajamento, por rede e no total. A taxa de engajamento por rede só aparece quando há `followers_count` pra ela (hoje, só o Instagram).
+2. **Lista dos posts do período** (últimos 30 dias), ordenados por engajamento (curtidas + comentários + compartilhamentos + salvamentos), com legenda completa, rede, tipo, data, curtidas, comentários e views.
+3. **Comentários dos 5 posts mais engajados do período**, até 5 por post, ordenados por curtidas do comentário (`comments.like_count`) — pensado pra servir de insumo pra pedir uma análise de tom/conteúdo a uma IA fora do app.
+
+O PDF é gerado com [`@react-pdf/renderer`](https://react-pdf.org/) direto no servidor (rota Node.js, não Edge — a biblioteca depende de APIs do Node). Não há truncamento de legendas/comentários no PDF, só um limite de quantidade (5 posts, 5 comentários por post), justamente pra manter o texto completo disponível pra análise posterior.
+
 ## Estrutura do banco
 
 - `social_profiles` — perfis conectados (rede, username, id da conta na plataforma)
 - `posts` — conteúdos publicados (rede, id externo, tipo, legenda/roteiro, data, link)
 - `post_metrics` — métricas coletadas por post ao longo do tempo (curtidas, comentários, views, salvamentos, alcance)
-- `comments` — comentários dos posts
+- `comments` — comentários dos posts (com `like_count`, usado pra ordenar por relevância no relatório em PDF)
 - `audience_demographics` — dados demográficos da audiência por rede/data
 - `scripts` — roteiros de conteúdo (rascunho/pronto/publicado)
 - `calendar_items` — itens do calendário editorial (data sugerida, rede, tema, status)

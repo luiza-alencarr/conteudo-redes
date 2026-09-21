@@ -131,6 +131,7 @@ export async function syncInstagram(): Promise<SyncSummary> {
             // Comentários só com figurinha/GIF vêm sem "text" na API; a coluna é
             // not-null, então usamos string vazia em vez de perder o comentário.
             text: comment.text ?? "",
+            like_count: comment.like_count ?? 0,
             commented_at: comment.timestamp,
           })),
           { onConflict: "post_id,external_id" },

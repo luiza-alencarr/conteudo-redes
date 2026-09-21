@@ -33,7 +33,7 @@ export interface AnalyticsData {
 // Interações totais de um post: curtidas + comentários + compartilhamentos +
 // salvamentos. Usado tanto pra ordenar por engajamento quanto pra taxa de
 // engajamento — mantém as duas noções de "engajamento" consistentes.
-function getTotalInteractions(post: PostWithMetrics): number {
+export function getTotalInteractions(post: PostWithMetrics): number {
   return (
     (post.metrics?.likes ?? 0) +
     (post.metrics?.comments_count ?? 0) +
@@ -42,7 +42,7 @@ function getTotalInteractions(post: PostWithMetrics): number {
   );
 }
 
-function isWithinLastDays(post: PostWithMetrics, now: number, days: number): boolean {
+export function isWithinLastDays(post: PostWithMetrics, now: number, days: number): boolean {
   if (!post.published_at) return false;
   return now - new Date(post.published_at).getTime() <= days * 24 * 60 * 60 * 1000;
 }

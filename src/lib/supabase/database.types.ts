@@ -121,6 +121,7 @@ export interface Database {
           external_id: string | null;
           author: string | null;
           text: string;
+          like_count: number;
           commented_at: string | null;
           created_at: string;
         };
@@ -130,6 +131,7 @@ export interface Database {
           external_id?: string | null;
           author?: string | null;
           text: string;
+          like_count?: number;
           commented_at?: string | null;
           created_at?: string;
         };
