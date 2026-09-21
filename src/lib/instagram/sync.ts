@@ -121,7 +121,9 @@ export async function syncInstagram(): Promise<SyncSummary> {
             post_id: post.id,
             external_id: comment.id,
             author: comment.username ?? null,
-            text: comment.text,
+            // Comentários só com figurinha/GIF vêm sem "text" na API; a coluna é
+            // not-null, então usamos string vazia em vez de perder o comentário.
+            text: comment.text ?? "",
             commented_at: comment.timestamp,
           })),
           { onConflict: "post_id,external_id" },

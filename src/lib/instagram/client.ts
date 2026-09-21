@@ -172,7 +172,8 @@ export async function getMediaInsights(
 
 export interface InstagramComment {
   id: string;
-  text: string;
+  // Ausente para comentários sem texto (ex.: só figurinha/GIF).
+  text?: string;
   username?: string;
   timestamp: string;
 }
