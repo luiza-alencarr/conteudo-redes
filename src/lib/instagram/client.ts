@@ -129,14 +129,18 @@ export async function getAllMedia(
   return items.slice(0, maxItems);
 }
 
-function metricsForMedia(media: Pick<InstagramMedia, "media_product_type">): string[] {
-  if (media.media_product_type === "REELS") {
-    return ["reach", "saved", "shares", "total_interactions", "plays"];
-  }
+function metricsForMedia(
+  media: Pick<InstagramMedia, "media_type" | "media_product_type">,
+): string[] {
   if (media.media_product_type === "STORY") {
     return ["reach", "replies", "exits", "taps_forward", "taps_back"];
   }
-  return ["reach", "saved", "shares", "total_interactions"];
+  const base = ["reach", "saved", "shares", "total_interactions"];
+  // "plays" é o metric de visualizações de vídeo na Graph API atual (substituiu
+  // "video_views"); vale tanto pra Reels quanto pra vídeo comum publicado no
+  // feed — sem essa checagem por media_type, o segundo caso nunca pedia a
+  // métrica e "views" ficava sempre 0.
+  return media.media_type === "VIDEO" ? [...base, "plays"] : base;
 }
 
 export interface InstagramMediaInsights {
@@ -146,27 +150,32 @@ export interface InstagramMediaInsights {
   plays?: number;
 }
 
-// A Meta muda com frequência quais métricas são válidas por tipo de mídia;
-// uma falha aqui não deve derrubar a sincronização inteira.
+export interface MediaInsightsResult {
+  insights: InstagramMediaInsights;
+  // Presente quando a chamada falhou (métrica inválida/depreciada, permissão
+  // insuficiente, etc.) — o chamador decide como expor isso ao usuário em vez
+  // de a falha ficar só no log do servidor.
+  error?: string;
+}
+
 export async function getMediaInsights(
-  media: Pick<InstagramMedia, "id" | "media_product_type">,
+  media: Pick<InstagramMedia, "id" | "media_type" | "media_product_type">,
   accessToken: string,
-): Promise<InstagramMediaInsights> {
+): Promise<MediaInsightsResult> {
   try {
     const result = await graphGet<{ data: { name: string; values: { value: number }[] }[] }>(
       `/${media.id}/insights`,
       { metric: metricsForMedia(media).join(",") },
       accessToken,
     );
-    return Object.fromEntries(
+    const insights = Object.fromEntries(
       result.data.map((metric) => [metric.name, metric.values[0]?.value ?? 0]),
     );
+    return { insights };
   } catch (error) {
-    console.warn(
-      `Falha ao buscar insights do post ${media.id}:`,
-      error instanceof Error ? error.message : error,
-    );
-    return {};
+    const message = error instanceof Error ? error.message : "erro desconhecido";
+    console.warn(`Falha ao buscar insights do post ${media.id}:`, message);
+    return { insights: {}, error: message };
   }
 }
 

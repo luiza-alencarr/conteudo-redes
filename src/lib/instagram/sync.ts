@@ -95,7 +95,13 @@ export async function syncInstagram(): Promise<SyncSummary> {
     }
     postsSynced++;
 
-    const insights = await instagram.getMediaInsights(media, appAccessToken);
+    const { insights, error: insightsError } = await instagram.getMediaInsights(
+      media,
+      appAccessToken,
+    );
+    if (insightsError) {
+      warnings.push(`Insights do post ${media.id}: ${insightsError}`);
+    }
 
     const { error: metricsError } = await supabase.from("post_metrics").insert({
       post_id: post.id,
